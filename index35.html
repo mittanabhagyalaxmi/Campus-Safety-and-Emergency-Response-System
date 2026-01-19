@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowd Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #1a3a6e;
+            --secondary: #f8f9fa;
+            --accent: #e63946;
+            --text-dark: #333;
+            --text-light: #f8f9fa;
+            --success: #28a745;
+            --warning: #ffc107;
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            color: var(--text-dark); 
+            background-color: #f5f5f5; 
+        }
+        
+        .navbar-brand { 
+            font-weight: 700; 
+            color: var(--primary); 
+        }
+        
+        .hero-section { 
+            background: linear-gradient(135deg, rgba(26, 58, 110, 0.9), rgba(230, 57, 70, 0.8)), 
+                        url('https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80'); 
+            background-size: cover; 
+            background-position: center; 
+            color: white; 
+            padding: 5rem 0; 
+            text-align: center;
+        }
+        
+        .emergency-btn { 
+            background-color: var(--accent); 
+            border: none; 
+            font-weight: 600; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+        
+        .emergency-btn:hover { 
+            background-color: #c1303c; 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(230, 57, 70, 0.4); 
+        }
+        
+        .video-upload-area {
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        }
+        
+        .video-upload-area:hover {
+            border-color: var(--primary);
+            background: linear-gradient(145deg, #f8f9fa, #ffffff);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .video-upload-area.dragover {
+            border-color: var(--accent);
+            background: linear-gradient(145deg, #fff5f5, #ffebee);
+            transform: scale(1.02);
+        }
+        
+        .video-preview {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 15px;
+            margin-top: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .detection-result {
+            margin-top: 2rem;
+            padding: 2rem;
+            border-radius: 15px;
+            display: none;
+            transition: all 0.3s ease;
+        }
+        
+        .detection-result.crowd-detected {
+            background: linear-gradient(145deg, #fff5f5, #ffebee);
+            border: 3px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(230, 57, 70, 0.2);
+        }
+        
+        .detection-result.no-crowd {
+            background: linear-gradient(145deg, #f0f8ff, #e8f5e8);
+            border: 3px solid var(--success);
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.2);
+        }
+        
+        .processing-spinner {
+            display: none;
+            padding: 2rem;
+        }
+        
+        .crowd-count {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .alert-status {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            display: none;
+            transition: all 0.3s ease;
+        }
+        
+        .alert-status.success {
+            background: linear-gradient(145deg, #d4edda, #c3e6cb);
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        
+        .alert-status.error {
+            background: linear-gradient(145deg, #f8d7da, #f5c6cb);
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-processing { background-color: #ffc107; }
+        
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .progress-bar-custom {
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+        
+        .toast-container { z-index: 1090; }
+        
+        .btn-analyze {
+            background: linear-gradient(135deg, var(--success), #20c997);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .system-status {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .demo-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .demo-btn {
+            background: linear-gradient(135deg, #6f42c1, #e83e8c);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
+        }
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- System Status Indicator -->
+    <div class="system-status">
+        <div class="d-flex align-items-center">
+            <span class="status-indicator" id="systemStatus"></span>
+            <small id="systemStatusText">Checking...</small>
+        </div>
+    </div>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-shield-check me-2"></i>
+                Smart Crowd Detection System
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#crowd-detection">Detection</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#emergency">Emergency</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-4">AI-Powered Crowd Detection</h1>
+            <p class="lead mb-5">Upload a video to detect crowds automatically. Emergency alerts with location and calls are sent when crowd density exceeds 10 people.</p>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="feature-card">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <i class="bi bi-camera-video display-4 text-primary mb-3"></i>
+                                <h5>Video Analysis</h5>
+                                <p class="text-muted">AI-powered crowd detection with OpenCV</p>
+                            </div>
+                            <div class="col-md-4">
+                                <i class="bi bi-geo-alt display-4 text-warning mb-3"></i>
+                                <h5>Location Tracking</h5>
+                                <p class="text-muted">Automatic GPS location sharing</p>
+                            </div>
+                            <div class="col-md-4">
+                                <i class="bi bi-telephone display-4 text-success mb-3"></i>
+                                <h5>Emergency Alerts</h5>
+                                <p class="text-muted">WhatsApp messages & Voice calls</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Demo Section -->
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="demo-section">
+                <h4 class="mb-3"><i class="bi bi-play-circle me-2"></i>Quick Demo</h4>
+                <p class="text-muted mb-3">Test the system with simulated crowd detection scenarios</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-success demo-btn w-100" onclick="testCrowdDetection(25)">
+                            <i class="bi bi-people-fill me-2"></i>Test Large Crowd (25 people)
+                        </button>
+                        <small class="text-muted">Will trigger emergency alerts</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <button class="btn btn-info demo-btn w-100" onclick="testCrowdDetection(15)">
+                            <i class="bi bi-person-check me-2"></i>Test Normal Crowd (15 people)
+                        </button>
+                        <small class="text-muted">Will not trigger alerts</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Crowd Detection Section -->
+    <section id="crowd-detection" class="py-5">
+        <div class="container">
+            <h2 class="fw-bold mb-4 text-center">Crowd Detection System</h2>
+            <p class="lead text-center mb-5">Upload a video file to analyze crowd density. Emergency alerts with location and calls are automatically sent when more than 10 people are detected.</p>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <div class="video-upload-area" id="videoUploadArea">
+                        <i class="bi bi-cloud-upload display-1 text-muted mb-3"></i>
+                        <h4 class="mb-3">Upload Video File</h4>
+                        <p class="text-muted mb-4">Click here or drag and drop your video file</p>
+                        <p class="small text-muted mb-4">Supported formats: MP4, AVI, MOV, WebM (Max: 100MB)</p>
+                        <input type="file" id="videoFileInput" accept="video/*" style="display: none;">
+                        <button class="btn btn-primary btn-lg" onclick="document.getElementById('videoFileInput').click()">
+                            <i class="bi bi-folder-open me-2"></i>Choose Video File
+                        </button>
+                    </div>
+                    
+                    <div id="videoPreviewContainer" style="display: none;" class="mt-4">
+                        <div class="text-center">
+                            <video id="videoPreview" class="video-preview" controls>
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="mt-4">
+                                <button id="analyzeBtn" class="btn btn-analyze btn-lg">
+                                    <i class="bi bi-play-circle me-2"></i>Analyze Video for Crowd Detection
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="processing-spinner text-center" id="processingSpinner">
+                        <div class="spinner-border spinner-border-lg text-primary mb-3" role="status">
+                            <span class="visually-hidden">Processing...</span>
+                        </div>
+                        <h5 class="mb-3">Analyzing video for crowd detection...</h5>
+                        <p class="text-muted mb-4">Using OpenCV HOG detector to identify people in video frames</p>
+                        <div class="progress mb-3" style="height: 6px;">
+                            <div class="progress-bar progress-bar-custom" role="progressbar" style="width: 0%" id="progressBar"></div>
+                        </div>
+                        <small class="text-muted" id="progressText">Initializing analysis...</small>
+                    </div>
+                    
+                    <div class="detection-result" id="detectionResult">
+                        <div class="text-center">
+                            <i class="bi bi-people-fill display-1 mb-3" id="detectionIcon"></i>
+                            <h3 id="detectionTitle">Detection Result</h3>
+                            <div class="crowd-count" id="crowdCount">0 people detected</div>
+                            <p class="lead" id="detectionDescription">Analysis complete</p>
+                            
+                            <div class="alert-status" id="alertStatus">
+                                <div class="d-flex align-items-center justify-content-center mb-3">
+                                    <i class="bi bi-broadcast-pin display-4 me-3"></i>
+                                    <div>
+                                        <h5 class="mb-1" id="alertTitle">Alert Status</h5>
+                                        <p class="mb-0" id="alertMessage">No alerts sent</p>
+                                    </div>
+                                </div>
+                                <div class="row text-center mt-3" id="alertDetails">
+                                    <div class="col-md-4">
+                                        <i class="bi bi-geo-alt-fill text-warning display-6"></i>
+                                        <p class="small mb-0">Location Shared</p>
+                                        <strong id="locationStatus">-</strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="bi bi-whatsapp text-success display-6"></i>
+                                        <p class="small mb-0">WhatsApp Messages</p>
+                                        <strong id="whatsappStatus">-</strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <i class="bi bi-telephone text-primary display-6"></i>
+                                        <p class="small mb-0">Voice Calls</p>
+                                        <strong id="callStatus">-</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Emergency Response Section -->
+    <section id="emergency" class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h2 class="fw-bold mb-4">Manual Emergency Response</h2>
+                    <p class="lead mb-4">In case of manual emergency, trigger alerts with location and calls directly.</p>
+                    
+                    <div class="mb-4">
+                        <button id="fullAlertBtn" class="btn btn-danger btn-lg emergency-btn w-100 mb-3" onclick="sendManualAlert()">
+                            <i class="bi bi-broadcast me-2"></i>Send Manual Emergency Alert
+                        </button>
+                        <small class="text-muted">This will send location via WhatsApp and initiate voice calls to all emergency contacts</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h4 class="fw-bold mb-3">Emergency Contacts</h4>
+                    <div id="emergency-contacts" class="d-grid gap-2">
+                        <div class="text-center">
+                            <div class="spinner-border spinner-border-sm me-2"></div>
+                            <span class="text-muted">Loading emergency contacts...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // API Configuration - Update these URLs to match your deployment
+        const API_BASE_URL = 'http://localhost:5000'; // Change to your deployed URL
+        const CONTACTS_API_URL = `${API_BASE_URL}/contacts`;
+        const COMBINED_API_URL = `${API_BASE_URL}/combined-alert`;
+        const CROWD_DETECTION_API_URL = `${API_BASE_URL}/analyze-crowd`;
+        const HEALTH_CHECK_URL = `${API_BASE_URL}/health`;
+        const TEST_DETECTION_URL = `${API_BASE_URL}/test-detection`;
+        
+        // DOM Elements
+        const videoUploadArea = document.getElementById('videoUploadArea');
+        const videoFileInput = document.getElementById('videoFileInput');
+        const videoPreviewContainer = document.getElementById('videoPreviewContainer');
+        const videoPreview = document.getElementById('videoPreview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const processingSpinner = document.getElementById('processingSpinner');
+        const detectionResult = document.getElementById('detectionResult');
+        const emergencyContactsContainer = document.getElementById('emergency-contacts');
+        const systemStatus = document.getElementById('systemStatus');
+        const systemStatusText = document.getElementById('systemStatusText');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        
+        // Initialize system
+        checkSystemHealth();
+        loadEmergencyContacts();
+        
+        // System health check
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch(HEALTH_CHECK_URL);
+                if (response.ok) {
+                    systemStatus.className = 'status-indicator status-online';
+                    systemStatusText.textContent = 'System Online';
+                } else {
+                    throw new Error('System offline');
+                }
+            } catch (error) {
+                systemStatus.className = 'status-indicator status-offline';
+                systemStatusText.textContent = 'System Offline';
+            }
+        }
+        
+        // Toast notification function
+        function showToast(message, type = 'success') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Math.random().toString(36).substr(2, 9);
+            const toastIcon = type === 'success' ? 
+                `<i class="bi bi-check-circle-fill text-success me-2"></i>` : 
+                `<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>`;
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        ${toastIcon}
+                        <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                        <small class="text-muted">Just now</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>`;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toast = new bootstrap.Toast(document.getElementById(toastId));
+            toast.show();
+        }
+        // Progress simulation
+        function simulateProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                
+                progressBar.style.width = progress + '%';
+                
+                if (progress < 30) {
+                    progressText.textContent = 'Processing video frames...';
+                } else if (progress < 60) {
+                    progressText.textContent = 'Detecting people using HOG detector...';
+                } else if (progress < 85) {
+                    progressText.textContent = 'Analyzing crowd density...';
+                } else {
+                    progressText.textContent = 'Finalizing analysis...';
+                }
+            }, 500);
+            
+            return interval;
+        }
+        // Drag and drop functionality
+        videoUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            videoUploadArea.classList.add('dragover');
+        });
+        videoUploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            videoUploadArea.classList.remove('dragover');
+        });
+        videoUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            videoUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('video/')) {
+                handleVideoFile(files[0]);
+            } else {
+                showToast('Please upload a valid video file.', 'error');
+            }
+        });
+        videoUploadArea.addEventListener('click', function() {
+            videoFileInput.click();
+        });
+        videoFileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleVideoFile(this.files[0]);
+            }
+        });
+        function handleVideoFile(file) {
+            // Validate file size (100MB limit)
+            if (file.size > 100 * 1024 * 1024) {
+                showToast('File too large. Please select a video under 100MB.', 'error');
+                return;
+            }
+            
+            const url = URL.createObjectURL(file);
+            videoPreview.src = url;
+            videoPreviewContainer.style.display = 'block';
+            detectionResult.style.display = 'none';
+            
+            // Store file for analysis
+            window.currentVideoFile = file;
+            
+            showToast(`Video uploaded successfully! File: ${file.name}`, 'success');
+            
+            // Scroll to video preview
+            videoPreviewContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        // Analyze video for crowd detection
+        analyzeBtn.addEventListener('click', async function() {
+            if (!window.currentVideoFile) {
+                showToast('Please upload a video file first.', 'error');
+                return;
+            }
+            // Update system status
+            systemStatus.className = 'status-indicator status-processing';
+            systemStatusText.textContent = 'Processing...';
+            
+            processingSpinner.style.display = 'block';
+            detectionResult.style.display = 'none';
+            analyzeBtn.disabled = true;
+            
+            // Start progress simulation
+            const progressInterval = simulateProgress();
+            const formData = new FormData();
+            formData.append('video', window.currentVideoFile);
+            
+            try {
+                // Get current location
+                const position = await getCurrentPosition();
+                formData.append('latitude', position.coords.latitude);
+                formData.append('longitude', position.coords.longitude);
+                const response = await fetch(CROWD_DETECTION_API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Analysis failed');
+                }
+                const result = await response.json();
+                
+                // Complete progress
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressText.textContent = 'Analysis complete!';
+                
+                setTimeout(() => {
+                    displayDetectionResult(result);
+                }, 1000);
+                
+            } catch (error) {
+                clearInterval(progressInterval);
+                showToast('Analysis failed: ' + error.message, 'error');
+                console.error('Analysis error:', error);
+            } finally {
+                setTimeout(() => {
+                    processingSpinner.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                    systemStatus.className = 'status-indicator status-online';
+                    systemStatusText.textContent = 'System Online';
+                }, 1500);
+            }
+        });
+        function getCurrentPosition() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    // Use default location if geolocation is not available
+                    resolve({
+                        coords: {
+                            latitude: 13.0827, // Chennai coordinates
+                            longitude: 80.2707
+                        }
+                    });
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    resolve, 
+                    (error) => {
+                        // Use default location if geolocation fails
+                        resolve({
+                            coords: {
+                                latitude: 13.0827, // Chennai coordinates
+                                longitude: 80.2707
+                            }
+                        });
+                    }
+                );
+            });
+        }
+        function displayDetectionResult(result) {
+            const crowdCount = result.people_count || 0;
+            const alertSent = result.emergency_sent || false;
+            const crowdDetected = result.crowd_detected || false;
+            
+            document.getElementById('crowdCount').textContent = `${crowdCount} people detected`;
+            
+            if (crowdDetected) {
+                detectionResult.className = 'detection-result crowd-detected';
+                detectionResult.classList.add('pulse-animation');
+                document.getElementById('detectionIcon').className = 'bi bi-exclamation-triangle-fill display-1 mb-3 text-danger';
+                document.getElementById('detectionTitle').textContent = '🚨 CROWD DETECTED!';
+                document.getElementById('detectionDescription').textContent = 'High crowd density detected. Emergency protocols activated automatically.';
+                
+                const alertStatus = document.getElementById('alertStatus');
+                const alertTitle = document.getElementById('alertTitle');
+                const alertMessage = document.getElementById('alertMessage');
+                
+                if (alertSent) {
+                    alertStatus.className = 'alert-status success';
+                    alertTitle.textContent = '✅ Emergency Alerts Sent Successfully';
+                    alertMessage.textContent = 'Location shared via WhatsApp and voice calls initiated to all emergency contacts.';
+                    
+                    // Update alert details
+                    document.getElementById('locationStatus').textContent = 'Shared ✓';
+                    document.getElementById('whatsappStatus').textContent = 'Sent ✓';
+                    document.getElementById('callStatus').textContent = 'Initiated ✓';
+                } else {
+                    alertStatus.className = 'alert-status error';
+                    alertTitle.textContent = '❌ Alert Sending Failed';
+                    alertMessage.textContent = 'Failed to send emergency alerts. Please try manual alert or check system status.';
+                    
+                    document.getElementById('locationStatus').textContent = 'Failed ✗';
+                    document.getElementById('whatsappStatus').textContent = 'Failed ✗';
+                    document.getElementById('callStatus').textContent = 'Failed ✗';
+                }
+                alertStatus.style.display = 'block';
+                
+                showToast(`🚨 CROWD ALERT: ${crowdCount} people detected! ${alertSent ? 'Emergency services notified.' : 'Alert sending failed.'}`, alertSent ? 'success' : 'error');
+            } else {
+                detectionResult.className = 'detection-result no-crowd';
+                document.getElementById('detectionIcon').className = 'bi bi-people display-1 mb-3 text-success';
+                document.getElementById('detectionTitle').textContent = '✅ CROWD LEVEL NORMAL';
+                document.getElementById('detectionDescription').textContent = 'No excessive crowd detected. Safe environment.';
+                
+                const alertStatus = document.getElementById('alertStatus');
+                alertStatus.className = 'alert-status success';
+                document.getElementById('alertTitle').textContent = '✅ No Emergency Alerts Needed';
+                document.getElementById('alertMessage').textContent = 'Crowd count is within safe limits.';
+                document.getElementById('locationStatus').textContent = 'Not Needed';
+                document.getElementById('whatsappStatus').textContent = 'Not Sent';
+                document.getElementById('callStatus').textContent = 'Not Initiated';
+                alertStatus.style.display = 'block';
+                
+                showToast(`✅ SAFE: ${crowdCount} people detected. No alerts needed.`, 'success');
+            }
+        }
+        // Load emergency contacts
+        async function loadEmergencyContacts() {
+            try {
+                const response = await fetch(CONTACTS_API_URL);
+                if (!response.ok) throw new Error('Failed to load contacts');
+                
+                const contacts = await response.json();
+                emergencyContactsContainer.innerHTML = '';
+                
+                contacts.forEach(contact => {
+                    const contactElement = document.createElement('div');
+                    contactElement.className = 'card mb-2';
+                    contactElement.innerHTML = `
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">${contact.name}</h6>
+                                    <small class="text-muted">${contact.number}</small>
+                                </div>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                    `;
+                    emergencyContactsContainer.appendChild(contactElement);
+                });
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                emergencyContactsContainer.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Failed to load emergency contacts
+                    </div>
+                `;
+            }
+        }
+        // Test crowd detection with demo
+        window.testCrowdDetection = async function(peopleCount) {
+            try {
+                const response = await fetch(TEST_DETECTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        people_count: peopleCount,
+                        test_mode: true
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Test failed');
+                }
+                
+                const result = await response.json();
+                displayDetectionResult(result);
+                
+                // Scroll to results
+                detectionResult.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                showToast('Test failed: ' + error.message, 'error');
+                console.error('Test error:', error);
+            }
+        }
+        // Send manual emergency alert
+        window.sendManualAlert = async function() {
+            try {
+                const position = await getCurrentPosition();
+                const response = await fetch(COMBINED_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        test_mode: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Alert failed');
+                }
+                
+                const result = await response.json();
+                showToast('✅ Manual emergency alert sent successfully!', 'success');
+                
+            } catch (error) {
+                showToast('❌ Manual alert failed: ' + error.message, 'error');
+                console.error('Manual alert error:', error);
+            }
+        }
+    });
+    </script>
+</body>
+</html>

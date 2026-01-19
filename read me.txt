@@ -1,0 +1,64 @@
+Campus Safety and Emergency Response System
+
+📌 Project Overview
+The Campus Safety and Emergency Response System is designed to enhance student safety by providing quick communication, live location sharing, and intelligent video-based crowd detection during emergencies.
+It allows students to send alerts, share their location, and automatically trigger emergency calls/messages if a dangerous situation is detected.
+
+✨ Features
+
+📍 Emergency Alert Button
+Sends WhatsApp messages and live location to multiple emergency contacts instantly.
+
+🎥 Video Upload with Crowd Detection
+Users can upload videos. If the video detects 15+ people (crowd), the system triggers emergency alerts automatically.
+
+📞 Automated Call & WhatsApp Alert
+Calls and messages are sent to campus security and predefined contacts using Twilio API.
+
+🌍 Live Location Sharing
+Student location is shared during emergencies for faster response.
+
+🏗️ Technologies Used
+
+Frontend: HTML, CSS, JavaScript
+
+Backend: Python (Flask)
+
+Machine Learning: YOLOv8 (Ultralytics) for crowd detection
+
+Cloud/Services:
+
+Twilio API (for Calls & WhatsApp alerts)
+
+OpenCV (video frame processing)
+
+Database/Storage: Local/Cloud (for video uploads & logs)
+
+⚙️ Installation & Setup
+1 Clone the Repository
+git clone https://github.com/your-username/campus-safety-system.git
+cd campus-safety-system
+
+2️ Create Virtual Environment
+python -m venv venv
+source venv/bin/activate   # (Linux/Mac)
+venv\Scripts\activate      # (Windows)
+
+3️ Install Dependencies
+pip install -r requirements.txt
+
+4️ Run the Flask Server
+python cmpuss_clean_final.py
+
+5️ Access in Browser
+http://127.0.0.1:5000
+
+📊 Future Enhancements
+
+🔔 Mobile App version for faster access
+
+📡 Integration with IoT panic buttons on campus
+
+🔒 Role-based access for Admin, Security, and Students
+
+📈 Dashboard with live alerts and analytics
